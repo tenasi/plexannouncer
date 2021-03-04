@@ -1,0 +1,7 @@
+{
+    "plex_server_url": "https://plex.tenasi.de/web/index.html#!/server/9343ce14020b85edb29c9b0058b76c78aace83cf",
+    "plex_webhook_token": "UIhxo1kQV6W65adqiO6TQLMwH9DqNTx7POo6xiI6SE2PEXnIemUpGZNf0L5f7mQX",
+    "plex_webhook_port": "32500",
+    "discord_webhook_id": "817154178161573942",
+    "discord_webhook_token": "LAlcPwYDSlOEPV-7xpxkkG9RgblqHnoIyglbe_tfGYZJnbQPO6PnI4FejoIVKqKxt1aw"
+}
