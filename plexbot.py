@@ -1,18 +1,14 @@
-from aiohttp import web, hdrs, MultipartWriter, ClientSession
+import aiohttp
 import asyncio
 import urllib
 import discord
 import io
 import datetime
-
-PLEX_SERVER_URL="https://plex.tenasi.de/web/index.html#!/server/9343ce14020b85edb29c9b0058b76c78aace83cf"
-PLEX_WEBHOOK_TOKEN="UIhxo1kQV6W65adqiO6TQLMwH9DqNTx7POo6xiI6SE2PEXnIemUpGZNf0L5f7mQX"
-DISCORD_WEBHOOK_ID="817154178161573942"
-DISCORD_WEBHOOK_TOKEN="LAlcPwYDSlOEPV-7xpxkkG9RgblqHnoIyglbe_tfGYZJnbQPO6PnI4FejoIVKqKxt1aw"
+import json
 
 async def handle(request):
     if not request.content_type == "multipart/form-data":
-        return web.Response()
+        return aiohttp.web.Response()
     
     reader = await request.multipart()
     metadata = None
@@ -20,14 +16,14 @@ async def handle(request):
     while True:
         part = await reader.next()
         if part is None: break
-        if part.headers[hdrs.CONTENT_TYPE] == "application/json":
+        if part.headers[aiohttp.hdrs.CONTENT_TYPE] == "application/json":
             metadata = await part.json()
             continue
         thumbnail = await part.read(decode=False)
 
     handle_plex_events(metadata, thumbnail)
 
-    return web.Response()
+    return aiohttp.web.Response()
 
 def handle_plex_events(metadata, thumbnail):
     event = metadata["event"]
@@ -69,9 +65,17 @@ def handle_new_show():
 def handle_new_track():
     pass
         
-app = web.Application()
-app.add_routes([web.post(f"/{PLEX_WEBHOOK_TOKEN}", handle)])
-webhook = discord.Webhook.partial(DISCORD_WEBHOOK_ID, DISCORD_WEBHOOK_TOKEN, adapter=discord.RequestsWebhookAdapter())
-
 if __name__ == '__main__':
-    web.run_app(app, port=8000)
+    with open('config.json', 'r', encoding="utf-8") as cfg:
+        cfgdict = json.load(cfg)
+
+    PLEX_SERVER_URL = cfgdict["plex_server_url"]
+    PLEX_WEBHOOK_TOKEN = cfgdict["plex_webhook_token"]
+    PLEX_WEBHOOK_PORT = cfgdict["plex_webhook_port"]
+    DISCORD_WEBHOOK_ID = cfgdict["discord_webhook_id"]
+    DISCORD_WEBHOOK_TOKEN = cfgdict["discord_webhook_token"]
+    
+    app = aiohttp.web.Application()
+    app.add_routes([aiohttp.web.post(f"/{PLEX_WEBHOOK_TOKEN}", handle)])
+    webhook = discord.Webhook.partial(DISCORD_WEBHOOK_ID, DISCORD_WEBHOOK_TOKEN, adapter=discord.RequestsWebhookAdapter())
+    aiohttp.web.run_app(app, port=PLEX_WEBHOOK_PORT)
