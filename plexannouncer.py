@@ -1,4 +1,5 @@
 import aiohttp
+from aiohttp import web
 import asyncio
 import urllib
 import discord
@@ -7,8 +8,10 @@ import datetime
 import json
 
 async def handle(request):
+    print("Inbound request")
     if not request.content_type == "multipart/form-data":
-        return aiohttp.web.Response()
+        print("Request rejected invalid content type")
+        return web.Response()
     
     reader = await request.multipart()
     metadata = None
@@ -23,7 +26,7 @@ async def handle(request):
 
     handle_plex_events(metadata, thumbnail)
 
-    return aiohttp.web.Response()
+    return web.Response()
 
 def handle_plex_events(metadata, thumbnail):
     event = metadata["event"]
@@ -33,10 +36,13 @@ def handle_plex_events(metadata, thumbnail):
 def handle_library_new(metadata, thumbnail):
     ptype = metadata["type"]
     if ptype == "movie":
+        print("Handling new movie announcement")
         handle_new_movie(metadata, thumbnail)
     elif ptype == "show":
+        print("Handling new show announcement")
         handle_new_show()
     elif ptype == "track":
+        print("Handling new track announcement")
         handle_new_track()
     else:
         print(f"ERROR: Unknown ptype {ptype}")
@@ -66,7 +72,7 @@ def handle_new_track():
     pass
         
 if __name__ == '__main__':
-    with open('config.json', 'r', encoding="utf-8") as cfg:
+    with open('/config/config.json', 'r', encoding="utf-8") as cfg:
         cfgdict = json.load(cfg)
 
     PLEX_SERVER_URL = cfgdict["plex_server_url"]
@@ -75,7 +81,8 @@ if __name__ == '__main__':
     DISCORD_WEBHOOK_ID = cfgdict["discord_webhook_id"]
     DISCORD_WEBHOOK_TOKEN = cfgdict["discord_webhook_token"]
     
-    app = aiohttp.web.Application()
-    app.add_routes([aiohttp.web.post(f"/{PLEX_WEBHOOK_TOKEN}", handle)])
+    print("Start listening on port " + PLEX_WEBHOOK_PORT, flush=True)
+    app = web.Application()
+    app.add_routes([web.post(f"/{PLEX_WEBHOOK_TOKEN}", handle)])
     webhook = discord.Webhook.partial(DISCORD_WEBHOOK_ID, DISCORD_WEBHOOK_TOKEN, adapter=discord.RequestsWebhookAdapter())
-    aiohttp.web.run_app(app, port=PLEX_WEBHOOK_PORT)
+    web.run_app(app, port=PLEX_WEBHOOK_PORT)
