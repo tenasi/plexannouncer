@@ -6,6 +6,10 @@ import discord
 import io
 import datetime
 import json
+import pathlib
+import os
+import random
+import string
 
 async def handle(request):
     """Handle inbound request for web server"""
@@ -117,22 +121,38 @@ def handle_new_track(metadata, thumbnail):
     # send embed message to discord
     webhook.send(embed=embed, file=thumbnail)
 
-if __name__ == '__main__':
-    # read webhook configuration
+def gen_token():
+    """Generates a random token"""
+    choices = string.ascii_letters + string.digits
+    selection = [random.choice(choices) for _ in range(64)]
+    return "".join(selection)
+
+if __name__ == "__main__":
+    # create default config if no config file found
+    if not pathlib.Path("/config/config.json").is_file():
+        with open("/plexannouncer/example_config.json", "r", encoding="utf-8") as default_cfg:
+            current_cfg = default_cfg.read().replace("RANDOM_TOKEN", gen_token())
+            with open("/config/config.json", "w", encoding="utf-8") as cfg:
+                cfg.write(current_cfg)
+
+    # try reading webhook configuration
     try:
-        with open('/config/config.json', 'r', encoding="utf-8") as cfg:
+        with open("/config/config.json", "r", encoding="utf-8") as cfg:
             cfgdict = json.load(cfg)
 
         PLEX_SERVER_URL = cfgdict["plex_server_url"]
         PLEX_WEBHOOK_TOKEN = cfgdict["plex_webhook_token"]
-        PLEX_WEBHOOK_PORT = cfgdict["plex_webhook_port"]
         DISCORD_WEBHOOK_ID = cfgdict["discord_webhook_id"]
         DISCORD_WEBHOOK_TOKEN = cfgdict["discord_webhook_token"]
+        print(f"Plex webhook URL: http://localhost:32500/{PLEX_WEBHOOK_TOKEN}", flush=True)
+
+        if PLEX_SERVER_URL.endswith("SERVERID") or DISCORD_WEBHOOK_ID == "ID" or DISCORD_WEBHOOK_TOKEN == "TOKEN":
+            raise Exception("ConfigError")
     except Exception:
         print("Error reading configuration, please check your config file")
         exit()
     
-    # running web server on plex webhook port
+    # running web server and discord webhook client
     print("Start listening on port 32500", flush=True)
     app = web.Application()
     app.add_routes([web.post(f"/{PLEX_WEBHOOK_TOKEN}", handle)])
