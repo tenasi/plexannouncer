@@ -37,4 +37,4 @@ Note that the container bust me reachable from your plex host. If you running bo
 
 ## Sources
 
-* [GitLab](https://gitlab.tenasi.de/tenasi/plex-announcer)
+* [GitHub](https://github.com/tenasi/plexannouncer)
