@@ -133,7 +133,7 @@ if __name__ == '__main__':
         exit()
     
     # running web server on plex webhook port
-    print("Start listening on port " + 32500, flush=True)
+    print("Start listening on port 32500", flush=True)
     app = web.Application()
     app.add_routes([web.post(f"/{PLEX_WEBHOOK_TOKEN}", handle)])
     webhook = discord.Webhook.partial(DISCORD_WEBHOOK_ID, DISCORD_WEBHOOK_TOKEN, adapter=discord.RequestsWebhookAdapter())
