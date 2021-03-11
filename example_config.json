@@ -1,6 +1,6 @@
 {
     "plex_server_url": "https://app.plex.tv/desktop#!/server/SERVERID",
-    "plex_webhook_token": "PUT_IN_HERE_A_RANDOMLY_GERNATED_TOKEN",
+    "plex_webhook_token": "RANDOM_TOKEN",
     "discord_webhook_id": "ID",
     "discord_webhook_token": "TOKEN"
 }

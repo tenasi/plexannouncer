@@ -4,7 +4,7 @@ VOLUME /config
 
 WORKDIR /plexannouncer
 
-COPY plexannouncer.py requirements.txt .
+COPY plexannouncer.py requirements.txt example_config.json .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
