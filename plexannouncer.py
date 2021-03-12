@@ -145,13 +145,20 @@ if __name__ == "__main__":
         DISCORD_WEBHOOK_ID = cfgdict["discord_webhook_id"]
         DISCORD_WEBHOOK_TOKEN = cfgdict["discord_webhook_token"]
         print(f"Plex webhook URL: http://localhost:32500/{PLEX_WEBHOOK_TOKEN}", flush=True)
-
-        if PLEX_SERVER_URL.endswith("SERVERID") or DISCORD_WEBHOOK_ID == "ID" or DISCORD_WEBHOOK_TOKEN == "TOKEN":
-            raise Exception("ConfigError")
     except Exception:
         print("Error reading configuration, please check your config file")
         exit()
     
+    if not PLEX_SERVER_URL or PLEX_SERVER_URL.endswith("SERVERID"):
+        print("Config error: Invalid plex server url")
+        exit()
+    if not DISCORD_WEBHOOK_ID or DISCORD_WEBHOOK_ID == "ID":
+        print("Config error: Invalid discord webhook id")
+        exit()
+    if not DISCORD_WEBHOOK_TOKEN or DISCORD_WEBHOOK_TOKEN == "TOKEN":
+        print("Config error: Invalid discord webhook token")
+        exit()
+
     # running web server and discord webhook client
     print("Start listening on port 32500", flush=True)
     app = web.Application()
