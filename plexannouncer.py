@@ -32,22 +32,24 @@ async def handle(request):
                 continue
             thumbnail = await part.read(decode=False)
     except Exception:
-        print("Error reading thumbnails, discarding request")
+        print("Error reading thumbnails, discarding request", flush=True)
         return web.Response()
 
     # try reading event type
     try:
         event = metadata["event"]
     except KeyError:
-        print("Error handling inbound request, possibly not from plex")
+        print("Error handling inbound request, possibly not from plex", flush=True)
+        return web.Response()
 
     # check if event is library.new event and handle it accordingly
     if event == "library.new":
         try:
             handle_library_new(metadata["Metadata"], thumbnail)
         except Exception:
-            print("Error handling library.new event or quering metadata")
-            return web.Response()
+            print("Error handling library.new event or quering metadata", flush=True)
+    else:
+        print("Ignoring request, event type not of library.new")
 
     return web.Response()
 
