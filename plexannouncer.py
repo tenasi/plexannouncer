@@ -200,8 +200,11 @@ if __name__ == "__main__":
         print(e, flush=True)
         exit(-1)
 
+    port = "32500"
+    if os.getenv("TCP_PORT_32500"):
+        port = os.getenv("TCP_PORT_32500")
     # running web server and discord webhook client
-    print(f"Plex webhook URL: http://localhost:32500/{PLEX_WEBHOOK_TOKEN}", flush=True)
+    print(f"Plex webhook URL: http://localhost:{port}/{PLEX_WEBHOOK_TOKEN}", flush=True)
     app = web.Application()
     app.add_routes([web.post(f"/{PLEX_WEBHOOK_TOKEN}", handle)])
     webhook = discord.Webhook.partial(DISCORD_WEBHOOK_ID, DISCORD_WEBHOOK_TOKEN, adapter=discord.RequestsWebhookAdapter())
