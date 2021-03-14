@@ -10,6 +10,7 @@ import pathlib
 import os
 import random
 import string
+import re
 
 async def handle(request):
     """Handle inbound request for web server"""
@@ -123,46 +124,84 @@ def handle_new_track(metadata, thumbnail):
     # send embed message to discord
     webhook.send(embed=embed, file=thumbnail)
 
-def gen_token():
-    """Generates a random token"""
-    choices = string.ascii_letters + string.digits
-    selection = [random.choice(choices) for _ in range(64)]
-    return "".join(selection)
+
+
+class ConfigError(Exception):
+    pass
+
+def _get_key(key: str, config: dict):
+    if key in config:
+        return config[key]
+    elif key.upper() in config:
+        return config[key.upper()]
+    elif key.lower() in config:
+        return config[key.lower()]
+    raise ConfigError(f"{key} is not defined")
+
+def _get_discord_webhook_id(config: dict):
+    discord_webhook_id = _get_key("discord_webhook_id", config)
+    if not discord_webhook_id.isnumeric():
+        raise ConfigError("Invalid discord webhook id")
+    return discord_webhook_id
+    
+def _get_discord_webhook_token(config: dict):
+    discord_webhook_token = _get_key("discord_webhook_token", config)
+    if re.fullmatch(r"[a-zA-Z0-9-_]*", discord_webhook_token) is None:
+        raise ConfigError("Invalid discord webhook token")
+    return discord_webhook_token
+    
+def _get_plex_webhook_token(config: dict):
+    plex_webhook_token = _get_key("plex_webhook_token", config)
+    if re.fullmatch(r"[a-zA-Z0-9-_]*", plex_webhook_token) is None:
+        raise ConfigError("Invalid plex webhook token")
+    return plex_webhook_token
+
+def _get_plex_server_url(config: dict):
+    plex_server_url = _get_key("plex_server_url", config)
+    if re.search(r"\/desktop#!\/server\/[a-zA-Z0-9]*\/?$", plex_server_url) is None:
+        raise ConfigError("Invalid plex server url")
+    return plex_server_url
+
+def _get_discord_webhook_url(config: dict):
+    discord_webhook_url = _get_key("discord_webhook_url", config)
+    if re.fullmatch(r"https://discord\.com/api/webhooks/[0-9]*/[a-zA-Z0-9-_]*$", discord_webhook_url) is None:
+        raise ConfigError("Invalid discord webhook url")
+    return discord_webhook_url
+
+def _split_discord_webhook_url(discord_webhook_url):
+    return discord_webhook_url.replace("https://discord.com/api/webhooks/", "").split("/")
 
 if __name__ == "__main__":
-    # create default config if no config file found
-    if not pathlib.Path("/config/config.json").is_file():
-        with open("/plexannouncer/example_config.json", "r", encoding="utf-8") as default_cfg:
-            current_cfg = default_cfg.read().replace("RANDOM_TOKEN", gen_token())
-            with open("/config/config.json", "w", encoding="utf-8") as cfg:
-                cfg.write(current_cfg)
-
-    # try reading webhook configuration
-    try:
-        with open("/config/config.json", "r", encoding="utf-8") as cfg:
-            cfgdict = json.load(cfg)
-
-        PLEX_SERVER_URL = cfgdict["plex_server_url"]
-        PLEX_WEBHOOK_TOKEN = cfgdict["plex_webhook_token"]
-        DISCORD_WEBHOOK_ID = cfgdict["discord_webhook_id"]
-        DISCORD_WEBHOOK_TOKEN = cfgdict["discord_webhook_token"]
-        print(f"Plex webhook URL: http://localhost:32500/{PLEX_WEBHOOK_TOKEN}", flush=True)
-    except Exception:
-        print("Error reading configuration, please check your config file")
-        exit()
+    if pathlib.Path("/config/config.json").is_file():
+        try:
+            with open("/config/config.json", "r", encoding="utf-8") as f:
+                config = json.load(f)
+        except Exception:
+            print("Error reading configuration, please check your config file")
+            exit(-1)
+    else:
+        config = dict(os.environ)
     
-    if not PLEX_SERVER_URL or PLEX_SERVER_URL.endswith("SERVERID"):
-        print("Config error: Invalid plex server url")
-        exit()
-    if not DISCORD_WEBHOOK_ID or DISCORD_WEBHOOK_ID == "ID":
-        print("Config error: Invalid discord webhook id")
-        exit()
-    if not DISCORD_WEBHOOK_TOKEN or DISCORD_WEBHOOK_TOKEN == "TOKEN":
-        print("Config error: Invalid discord webhook token")
-        exit()
+    try:
+        try:
+            discord_webhook_url = _get_discord_webhook_url(config)
+            DISCORD_WEBHOOK_ID, DISCORD_WEBHOOK_TOKEN = _split_discord_webhook_url(discord_webhook_url)
+        except ConfigError as e:
+            print(e, flush=True)
+            print("Falling back to manual discord webhook configuration", flush=True)
+            DISCORD_WEBHOOK_ID = _get_discord_webhook_id(config)
+            DISCORD_WEBHOOK_TOKEN = _get_discord_webhook_token(config)
+        
+        PLEX_WEBHOOK_TOKEN = _get_plex_webhook_token(config)
+        PLEX_SERVER_URL = _get_plex_server_url(config)
+        if PLEX_SERVER_URL.endswith("/"):
+            PLEX_SERVER_URL = PLEX_SERVER_URL[:-1]
+    except ConfigError as e:
+        print(e, flush=True)
+        exit(-1)
 
     # running web server and discord webhook client
-    print("Start listening on port 32500", flush=True)
+    print(f"Plex webhook URL: http://localhost:32500/{PLEX_WEBHOOK_TOKEN}", flush=True)
     app = web.Application()
     app.add_routes([web.post(f"/{PLEX_WEBHOOK_TOKEN}", handle)])
     webhook = discord.Webhook.partial(DISCORD_WEBHOOK_ID, DISCORD_WEBHOOK_TOKEN, adapter=discord.RequestsWebhookAdapter())
