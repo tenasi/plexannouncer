@@ -164,12 +164,14 @@ def _get_plex_server_url(config: dict):
 
 def _get_discord_webhook_url(config: dict):
     discord_webhook_url = _get_key("discord_webhook_url", config)
-    if re.fullmatch(r"https://discord\.com/api/webhooks/[0-9]*/[a-zA-Z0-9-_]*$", discord_webhook_url) is None:
+    if re.fullmatch(r"https://discord(app)?\.com/api/webhooks/[0-9]*/[a-zA-Z0-9-_]*$", discord_webhook_url) is None:
         raise ConfigError("Invalid discord webhook url")
     return discord_webhook_url
 
 def _split_discord_webhook_url(discord_webhook_url):
-    return discord_webhook_url.replace("https://discord.com/api/webhooks/", "").split("/")
+    return discord_webhook_url.replace("https://discord.com/api/webhooks/", "")\
+                              .replace("https://discordapp.com/api/webhooks/", "")\
+                              .split("/")
 
 if __name__ == "__main__":
     if pathlib.Path("/config/config.json").is_file():
