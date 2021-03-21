@@ -17,7 +17,7 @@ async def handle(request):
     print("Inbound request", flush=True)
     # discard all requests not of type multipart/form-data
     if not request.content_type == "multipart/form-data":
-        print("Request rejected invalid content type", flush=True)
+        print("Request rejected. Invalid content type, possibly not from plex.", flush=True)
         return web.Response()
     
     # try reading attached thumbnail
@@ -33,14 +33,14 @@ async def handle(request):
                 continue
             thumbnail = await part.read(decode=False)
     except Exception:
-        print("Error reading thumbnails, discarding request", flush=True)
+        print("Request rejected. Error reading thumbnail.", flush=True)
         return web.Response()
 
     # try reading event type
     try:
         event = metadata["event"]
     except KeyError:
-        print("Error handling inbound request, possibly not from plex", flush=True)
+        print("Request rejected. No event type specified, possibly not from plex.", flush=True)
         return web.Response()
 
     # check if event is library.new event and handle it accordingly
@@ -48,23 +48,28 @@ async def handle(request):
         try:
             handle_library_new(metadata["Metadata"], thumbnail)
         except Exception:
-            print("Error handling library.new event or quering metadata", flush=True)
+            print("Error handling library.new event.", flush=True)
     else:
-        print("Ignoring request, event type not of library.new")
+        print(f"Request rejected. Event type of {event}.")
 
     return web.Response()
 
 def handle_library_new(metadata, thumbnail):
     """Check added type and call designated handler method"""
+    library = metadata["librarySectionTitle"]
+    if ALLOWED_LIBRARIES:
+        if library not in ALLOWED_LIBRARIES:
+            print(f"Ignoring library.new event from library {library}", flush=True)
+            return
     ptype = metadata["type"]
     if ptype == "movie":
-        print("Handling new movie announcement", flush=True)
+        print("Handling new movie announcement.", flush=True)
         handle_new_movie(metadata, thumbnail)
     elif ptype == "show":
-        print("Handling new show announcement", flush=True)
+        print("Handling new show announcement.", flush=True)
         handle_new_show(metadata, thumbnail)
     elif ptype == "track":
-        print("Handling new track announcement", flush=True)
+        print("Handling new track announcement.", flush=True)
         handle_new_track(metadata, thumbnail)
     else:
         print(f"ERROR: Unknown ptype {ptype}", flush=True)
@@ -77,7 +82,7 @@ def handle_new_movie(metadata, thumbnail):
     key = urllib.parse.quote_plus(metadata["key"])
     # build discord embed message
     embed = discord.Embed()
-    embed.title = f"New Movie: {metadata['title']}"
+    embed.title = f"{metadata['title']}"
     embed.set_thumbnail(url="attachment://cover.jpg")
     # add custom fields
     if "summary" in metadata:
@@ -102,7 +107,17 @@ def handle_new_show(metadata, thumbnail):
     key = urllib.parse.quote_plus(metadata["key"])
     # build discord embed message
     embed = discord.Embed()
-    # TODO
+    embed.title = f"New episodes of {metadata['title']}"
+    embed.set_thumbnail(url="attachment://cover.jpg")
+    # add custom fields
+    if "summary" in metadata:
+        embed.description = metadata["summary"]
+    if "duration" in metadata:
+        embed.add_field(name="Duration", value=str(datetime.timedelta(0,0,0,metadata["duration"])))
+    if "year" in metadata:
+        embed.add_field(name="Year", value=metadata["year"])
+    if "rating" in metadata:
+        embed.add_field(name="Rating", value=metadata["rating"])
     # set hyperlink to show on plex
     embed.url = f"{PLEX_SERVER_URL}/details?key={key}"
     embed.color = 0xe5a00d
@@ -129,14 +144,16 @@ def handle_new_track(metadata, thumbnail):
 class ConfigError(Exception):
     pass
 
-def _get_key(key: str, config: dict):
+def _get_key(key: str, config: dict, default=ConfigError()):
     if key in config:
         return config[key]
     elif key.upper() in config:
         return config[key.upper()]
     elif key.lower() in config:
         return config[key.lower()]
-    raise ConfigError(f"{key} is not defined")
+    elif type(default) is ConfigError:
+        raise ConfigError(f"{key} is not defined")
+    return default
 
 def _get_discord_webhook_id(config: dict):
     discord_webhook_id = _get_key("discord_webhook_id", config)
@@ -163,10 +180,16 @@ def _get_plex_server_url(config: dict):
     return plex_server_url
 
 def _get_discord_webhook_url(config: dict):
-    discord_webhook_url = _get_key("discord_webhook_url", config)
+    discord_webhook_url = _get_key("discord_webhook_url", config, None)
+    if discord_webhook_url is None:
+        return None
     if re.fullmatch(r"https://discord(app)?\.com/api/webhooks/[0-9]*/[a-zA-Z0-9-_]*$", discord_webhook_url) is None:
         raise ConfigError("Invalid discord webhook url")
     return discord_webhook_url
+
+def _get_allowed_libraries(config: dict):
+    allowed_libraries = _get_key("updated_libraries", config, "")
+    return [lib.strip() for lib in allowed_libraries.split(",")]
 
 def _split_discord_webhook_url(discord_webhook_url):
     return discord_webhook_url.replace("https://discord.com/api/webhooks/", "")\
@@ -185,10 +208,10 @@ if __name__ == "__main__":
         config = dict(os.environ)
     
     try:
-        try:
-            discord_webhook_url = _get_discord_webhook_url(config)
+        discord_webhook_url = _get_discord_webhook_url(config)
+        if discord_webhook_url:
             DISCORD_WEBHOOK_ID, DISCORD_WEBHOOK_TOKEN = _split_discord_webhook_url(discord_webhook_url)
-        except ConfigError as e:
+        else:
             print(e, flush=True)
             print("Falling back to manual discord webhook configuration", flush=True)
             DISCORD_WEBHOOK_ID = _get_discord_webhook_id(config)
@@ -198,6 +221,7 @@ if __name__ == "__main__":
         PLEX_SERVER_URL = _get_plex_server_url(config)
         if PLEX_SERVER_URL.endswith("/"):
             PLEX_SERVER_URL = PLEX_SERVER_URL[:-1]
+        ALLOWED_LIBRARIES = _get_allowed_libraries(config)
     except ConfigError as e:
         print(e, flush=True)
         exit(-1)
