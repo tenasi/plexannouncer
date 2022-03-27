@@ -2,7 +2,7 @@ FROM python:3
 
 WORKDIR /plexannouncer
 
-COPY ../plexannouncer.py requirements.txt .
+COPY plexannouncer.py .devcontainer/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
