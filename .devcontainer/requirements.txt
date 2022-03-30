@@ -1,0 +1,6 @@
+discord.py
+aiohttp
+requests
+
+flake8
+black
