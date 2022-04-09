@@ -29,7 +29,7 @@ class Config:
 
     def get_plex_server_url(self):
         url = self._get_key("plex_server_url")
-        if re.search(r"\/desktop#!\/server\/[a-zA-Z0-9]*\/?$", url) is None:
+        if re.search(r"\/desktop\/?#!\/(server|media)\/[a-zA-Z0-9]*\/?$", url) is None:
             raise ConfigError("Invalid plex server url")
         if url.endswith("/"):
             url = url[:-1]
