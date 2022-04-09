@@ -70,6 +70,9 @@ def handle_library_new(metadata, thumbnail):
     elif ptype == "show":
         print("Handling new show announcement.", flush=True)
         announcer.announce_show(metadata, thumbnail)
+    elif ptype == "episode":
+        print("Handling new show announcement.", flush=True)
+        announcer.announce_episode(metadata, thumbnail)
     elif ptype == "track":
         print("Handling new track announcement.", flush=True)
         announcer.announce_track(metadata, thumbnail)
