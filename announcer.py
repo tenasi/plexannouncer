@@ -28,7 +28,7 @@ class Announcer(object):
         )
 
     def announce_movie(self, metadata, thumbnail):
-        """Handle newly movies added to plex"""
+        """Handle new movies added to plex"""
         # setup thumbnail object
         thumbnail = discord.File(io.BytesIO(thumbnail), "cover.jpg")
         # read key for identifing movie and create link to plex
@@ -57,7 +57,7 @@ class Announcer(object):
             webhook.send(embed=embed, file=thumbnail)
 
     def announce_show(self, metadata, thumbnail):
-        """Handle newly tv shows added to plex"""
+        """Handle new tv shows added to plex"""
         # setup thumbnail object
         thumbnail = discord.File(io.BytesIO(thumbnail), "cover.jpg")
         # read key for identifing show and create link to plex
@@ -65,7 +65,7 @@ class Announcer(object):
         key = key.replace("%2Fchildren", "")
         # build discord embed message
         embed = discord.Embed()
-        embed.title = f"New episodes of {metadata['title']}"
+        embed.title = f"{metadata['title']}"
         embed.set_thumbnail(url="attachment://cover.jpg")
         # add custom fields
         if "summary" in metadata:
@@ -86,8 +86,38 @@ class Announcer(object):
         for webhook in self.webhooks:
             webhook.send(embed=embed, file=thumbnail)
 
+    def announce_episode(self, metadata, thumbnail):
+        """Handle new episodes added to plex"""
+        # setup thumbnail object
+        thumbnail = discord.File(io.BytesIO(thumbnail), "cover.jpg")
+        # read key for identifing show and create link to plex
+        key = urllib.parse.quote_plus(metadata["key"])
+        key = key.replace("%2Fchildren", "")
+        # build discord embed message
+        embed = discord.Embed()
+        embed.title = f"{metadata['grandparentTitle']}: {metadata['title']}"
+        embed.set_thumbnail(url="attachment://cover.jpg")
+        # add custom fields
+        if "summary" in metadata:
+            embed.description = metadata["summary"]
+        if "index" in metadata and "parentIndex" in metadata:
+            embed.add_field(name="Season", value=str(metadata["parentIndex"]))
+            embed.add_field(name="Episode", value=str(metadata["index"]))
+        if "duration" in metadata:
+            embed.add_field(name="Duration", value=str(datetime.timedelta(0,0,0,metadata["duration"])))
+        if "year" in metadata:
+            embed.add_field(name="Year", value=metadata["year"])
+        if "rating" in metadata:
+            embed.add_field(name="Rating", value=metadata["rating"])
+        # set hyperlink to show on plex
+        embed.url = f"{self.plex}/details?key={key}"
+        embed.color = 0xe5a00d
+        # send embed message to discord
+        for webhook in self.webhooks:
+            webhook.send(embed=embed, file=thumbnail)
+
     def announce_track(self, metadata, thumbnail):
-        """Handle newly music tracks added to plex"""
+        """Handle new music tracks added to plex"""
         # setup thumbnail object
         thumbnail = discord.File(io.BytesIO(thumbnail), "cover.jpg")
         # read key for identifing track and create link to plex
