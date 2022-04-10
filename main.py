@@ -1,20 +1,19 @@
-import aiohttp
 import os
-from aiohttp import web
+import logging
+from aiohttp import web, hdrs
 
 from config import Config, ConfigError
 from announcer import Announcer
 
+log = logging.getLogger(__name__)
+
 
 async def handle(request):
     """Handle inbound request for web server"""
-    print("Inbound request", flush=True)
+    log.info("Inbound request")
     # discard all requests not of type multipart/form-data
     if not request.content_type == "multipart/form-data":
-        print(
-            "Request rejected. Invalid content type, possibly not from plex.",
-            flush=True,
-        )
+        log.info("Request rejected. Invalid content type, possibly not from plex.")
         return web.Response()
 
     # try reading attached thumbnail
@@ -26,61 +25,67 @@ async def handle(request):
             part = await reader.next()
             if part is None:
                 break
-            if part.headers[aiohttp.hdrs.CONTENT_TYPE] == "application/json":
+            if part.headers[hdrs.CONTENT_TYPE] == "application/json":
                 metadata = await part.json()
                 continue
             thumbnail = await part.read(decode=False)
     except Exception:
-        print("Request rejected. Error reading thumbnail.", flush=True)
+        log.info("Request rejected. Error reading thumbnail.")
         return web.Response()
 
     # try reading event type
     try:
         event = metadata["event"]
     except KeyError:
-        print(
-            "Request rejected. No event type specified, possibly not from plex.",
-            flush=True,
-        )
+        log.info("Request rejected. No event type specified, possibly not from plex.")
         return web.Response()
 
     # check if event is library.new event and handle it accordingly
     if event == "library.new":
         try:
             handle_library_new(metadata["Metadata"], thumbnail)
-        except Exception:
-            print("Error handling library.new event.", flush=True)
+        except Exception as e:
+            log.error("Error handling library.new event.")
+            log.exception(e)
     else:
-        print(f"Request rejected. Event type of {event}.")
+        log.info(f"Request rejected. Event type of {event}.")
 
     return web.Response()
 
 
 def handle_library_new(metadata, thumbnail):
     """Check added type and call designated handler method"""
+    log.debug(metadata)
     library = metadata["librarySectionTitle"]
     if ALLOWED_LIBRARIES:
         if library not in ALLOWED_LIBRARIES:
-            print(f"Ignoring library.new event from library {library}", flush=True)
+            log.info(f"Ignoring library.new event from library {library}")
             return
     ptype = metadata["type"]
     if ptype == "movie":
-        print("Handling new movie announcement.", flush=True)
+        log.info("Handling new movie announcement.")
         announcer.announce_movie(metadata, thumbnail)
     elif ptype == "show":
-        print("Handling new show announcement.", flush=True)
+        log.info("Handling new show announcement.")
         announcer.announce_show(metadata, thumbnail)
     elif ptype == "episode":
-        print("Handling new show announcement.", flush=True)
+        log.info("Handling new show announcement.")
         announcer.announce_episode(metadata, thumbnail)
     elif ptype == "track":
-        print("Handling new track announcement.", flush=True)
+        log.info("Handling new track announcement.")
         announcer.announce_track(metadata, thumbnail)
     else:
-        print(f"ERROR: Unknown ptype {ptype}", flush=True)
+        log.error(f"ERROR: Unknown ptype {ptype}")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)-8s %(message)s",
+        level=logging.INFO,
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    log.debug("Logger initialized")
 
     try:
         config = Config()
@@ -90,14 +95,14 @@ if __name__ == "__main__":
         ALLOWED_LIBRARIES = config.get_allowed_libraries()
         PLEX_WEBHOOK_TOKEN = config.get_plex_webhook_token()
     except ConfigError as e:
-        print(e, flush=True)
+        log.critical(e, exc_info=True)
         exit(-1)
 
     port = "32500"
     if os.getenv("TCP_PORT_32500"):
         port = os.getenv("TCP_PORT_32500")
     # running web server and discord webhook client
-    print(f"Plex webhook URL: http://localhost:{port}/{PLEX_WEBHOOK_TOKEN}", flush=True)
+    log.info(f"Plex webhook URL: http://localhost:{port}/{PLEX_WEBHOOK_TOKEN}")
     app = web.Application()
     app.add_routes([web.post(f"/{PLEX_WEBHOOK_TOKEN}", handle)])
     web.run_app(app, port=32500)
