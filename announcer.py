@@ -104,14 +104,17 @@ class Announcer(object):
             embed.add_field(name="Season", value=str(metadata["parentIndex"]))
             embed.add_field(name="Episode", value=str(metadata["index"]))
         if "duration" in metadata:
-            embed.add_field(name="Duration", value=str(datetime.timedelta(0,0,0,metadata["duration"])))
+            embed.add_field(
+                name="Duration",
+                value=str(datetime.timedelta(0, 0, 0, metadata["duration"])),
+            )
         if "year" in metadata:
             embed.add_field(name="Year", value=metadata["year"])
         if "rating" in metadata:
             embed.add_field(name="Rating", value=metadata["rating"])
         # set hyperlink to show on plex
         embed.url = f"{self.plex}/details?key={key}"
-        embed.color = 0xe5a00d
+        embed.color = 0xE5A00D
         # send embed message to discord
         for webhook in self.webhooks:
             webhook.send(embed=embed, file=thumbnail)
