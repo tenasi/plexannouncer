@@ -5,7 +5,7 @@ from aiohttp import web, hdrs
 from config import Config, ConfigError
 from announcer import Announcer
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("main")
 
 
 async def handle(request):
@@ -79,10 +79,9 @@ def handle_library_new(metadata, thumbnail):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
     logging.basicConfig(
         format="%(asctime)s %(levelname)-8s %(message)s",
-        level=logging.INFO,
+        level=os.environ.get("LOGLEVEL", "INFO"),
         datefmt="%Y-%m-%d %H:%M:%S",
     )
     log.debug("Logger initialized")
