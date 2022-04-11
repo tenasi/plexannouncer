@@ -97,7 +97,9 @@ if __name__ == "__main__":
         log.critical(e, exc_info=True)
         exit(-1)
 
+    # set default port as specified in Dockerfile
     port = "32500"
+    # get actual port mapping from docker context
     if os.getenv("TCP_PORT_32500"):
         port = os.getenv("TCP_PORT_32500")
     # running web server and discord webhook client
