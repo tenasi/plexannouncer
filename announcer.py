@@ -2,6 +2,9 @@ import discord
 import urllib.parse
 import io
 import datetime
+import logging
+
+log = logging.getLogger("announcer")
 
 
 class Announcer(object):
@@ -9,6 +12,7 @@ class Announcer(object):
         self.plex = plex
         self.webhooks = list()
         for url in urls:
+            log.debug(f"Creating webhook for {url}")
             id, token = self._parse_url(url)
             webhook = self._create_webhook(id, token)
             self.webhooks.append(webhook)
@@ -29,6 +33,7 @@ class Announcer(object):
 
     def announce_movie(self, metadata, thumbnail):
         """Handle new movies added to plex"""
+        log.debug("Announcing new movie")
         # setup thumbnail object
         thumbnail = discord.File(io.BytesIO(thumbnail), "cover.jpg")
         # read key for identifing movie and create link to plex
@@ -58,6 +63,7 @@ class Announcer(object):
 
     def announce_show(self, metadata, thumbnail):
         """Handle new tv shows added to plex"""
+        log.debug("Announcing new show")
         # setup thumbnail object
         thumbnail = discord.File(io.BytesIO(thumbnail), "cover.jpg")
         # read key for identifing show and create link to plex
@@ -88,6 +94,7 @@ class Announcer(object):
 
     def announce_episode(self, metadata, thumbnail):
         """Handle new episodes added to plex"""
+        log.debug("Announcing new episode")
         # setup thumbnail object
         thumbnail = discord.File(io.BytesIO(thumbnail), "cover.jpg")
         # read key for identifing show and create link to plex
@@ -121,6 +128,7 @@ class Announcer(object):
 
     def announce_track(self, metadata, thumbnail):
         """Handle new music tracks added to plex"""
+        log.debug("Announcing new track")
         # setup thumbnail object
         thumbnail = discord.File(io.BytesIO(thumbnail), "cover.jpg")
         # read key for identifing track and create link to plex
@@ -128,6 +136,7 @@ class Announcer(object):
         # build discord embed message
         embed = discord.Embed()
         # TODO
+        log.error("Tracks are not full< implemented yet")
         # set hyperlink to track on plex
         embed.url = f"{self.plex}/details?key={key}"
         embed.color = 0xE5A00D
