@@ -19,7 +19,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       
       - name: test
-          run: echo ${{ steps.meta.outputs.tags }}
+        run: echo ${{ steps.meta.outputs.tags }}
 
       # - name: Build and push release image
       #   uses: docker/build-push-action@v2
