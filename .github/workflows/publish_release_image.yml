@@ -19,15 +19,15 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          tags: |
-            # disable tag latest if release is prerelease
-            type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
       
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: tenasi/plexannouncer
+          tags: |
+            # disable tag latest if release is prerelease
+            type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
           
       - name: Build and push release image
         uses: docker/build-push-action@v2
