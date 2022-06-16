@@ -25,7 +25,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: tenasi/plexannouncer
-          flavour: |
+          flavor: |
             latest=${{ !github.event.release.prerelease }}
           tags: |
             type=schedule
