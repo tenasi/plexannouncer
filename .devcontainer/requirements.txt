@@ -4,3 +4,4 @@ requests
 
 flake8
 black
+pytest
