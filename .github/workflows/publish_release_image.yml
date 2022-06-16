@@ -25,13 +25,11 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: tenasi/plexannouncer
+          flavour: |
+            latest=${{ !github.event.release.prerelease }}
           tags: |
             type=schedule
-            type=ref,event=branch
-            type=ref,event=tag
-            type=ref,event=pr
-            # disable tag latest if release is prerelease
-            type=raw,value=latest,enable=${{ !github.event.release.prerelease }}   
+            type=ref,event=tag 
           
       - name: Build and push release image
         uses: docker/build-push-action@v2
