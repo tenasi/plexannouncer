@@ -1,3 +1,5 @@
+name: Publish Dev Release
+
 on:
   push:
     branches:
