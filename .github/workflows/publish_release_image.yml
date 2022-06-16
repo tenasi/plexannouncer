@@ -25,10 +25,10 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: tenasi/plexannouncer
-
+          
       - name: Build and push release image
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          tags: tenasi/plexannouncer:dev
+          tags: ${{ steps.meta.outputs.tags }}
