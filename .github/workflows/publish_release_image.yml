@@ -26,8 +26,12 @@ jobs:
         with:
           images: tenasi/plexannouncer
           tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
             # disable tag latest if release is prerelease
-            type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
+            type=raw,value=latest,enable=${{ !github.event.release.prerelease }}   
           
       - name: Build and push release image
         uses: docker/build-push-action@v2
