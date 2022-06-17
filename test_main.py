@@ -1,9 +1,10 @@
-from aiohttp import web, FormData
-from PIL import Image
-import main
 import pytest
 import io
 import json
+from aiohttp import web, FormData
+from PIL import Image
+
+import main
 
 
 def thumbnail():
@@ -12,6 +13,7 @@ def thumbnail():
     img.save(b, "JPEG")
     b.seek(0)
     return b
+
 
 @pytest.fixture
 def cli(loop, aiohttp_client):
