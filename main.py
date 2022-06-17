@@ -31,7 +31,7 @@ async def handle(request):
             thumbnail = await part.read(decode=False)
     except Exception:
         log.info("Request rejected. Error reading thumbnail.")
-        return web.Response()
+        return web.Response(status=400)
 
     # try reading event type
     try:
@@ -47,6 +47,7 @@ async def handle(request):
         except Exception as e:
             log.error("Error handling library.new event.")
             log.exception(e)
+            return web.Response(status=400)
     else:
         log.info(f"Request rejected. Event type of {event}.")
 
@@ -75,7 +76,7 @@ def handle_library_new(metadata, thumbnail):
         log.info("Handling new track announcement.")
         announcer.announce_track(metadata, thumbnail)
     else:
-        log.error(f"ERROR: Unknown ptype {ptype}")
+        log.error(f"ERROR: Unknown type {ptype}")
 
 
 if __name__ == "__main__":

@@ -4,3 +4,6 @@ requests
 
 flake8
 black
+pytest
+pytest-aiohttp
+pillow
