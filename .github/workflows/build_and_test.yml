@@ -69,6 +69,7 @@ jobs:
 
   publish-dev:
     name: Push dev image to Docker Hub
+    needs: prod-build
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
