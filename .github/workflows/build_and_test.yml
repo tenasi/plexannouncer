@@ -1,4 +1,4 @@
-name: Build and test 
+name: Build and Test 
 
 on:
   push:
@@ -8,11 +8,13 @@ on:
 
 jobs:
   build:
-    name: Build and test iamge
+    name: Build and test
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.6", "3.7", "3.8", "3.9"]
+    env:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -25,8 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest
-          pip install -r requirements.txt
+          pip install -r .devcontainer/requirements.txt
       
       - name: Lint code
         run: |
@@ -36,3 +37,32 @@ jobs:
       - name: Test code
         run: |
           pytest
+
+  prod-build:
+    name: Build and run prod
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8", "3.9"]
+    env:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      PLEX_SERVER_URL: https://app.plex.tv/desktop/#!/server/1234123412341234123412341234123412341234/
+      PLEX_WEBHOOK_TOKEN: test
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run and exit
+        run: |
+          timeout 8s python main.py
