@@ -5,6 +5,7 @@ import datetime
 import logging
 
 log = logging.getLogger("announcer")
+color = 0xE5A00D
 
 
 class Announcer(object):
@@ -13,23 +14,11 @@ class Announcer(object):
         self.webhooks = list()
         for url in urls:
             log.debug(f"Creating webhook for {url}")
-            id, token = self._parse_url(url)
-            webhook = self._create_webhook(id, token)
+            webhook = self._create_webhook(url)
             self.webhooks.append(webhook)
 
-    def _parse_url(self, url):
-        return (
-            url.replace("https://discord.com/api/webhooks/", "")
-            .replace("https://discordapp.com/api/webhooks/", "")
-            .split("/")
-        )
-
-    def _create_webhook(self, id, token):
-        return discord.Webhook.partial(
-            id,
-            token,
-            adapter=discord.RequestsWebhookAdapter(),
-        )
+    def _create_webhook(self, url):
+        return discord.SyncWebhook.from_url(url)
 
     def announce_movie(self, metadata, thumbnail):
         """Handle new movies added to plex"""
@@ -56,7 +45,7 @@ class Announcer(object):
             embed.add_field(name="Rating", value=metadata["rating"])
         # set hyperlink to movie on plex
         embed.url = f"{self.plex}/details?key={key}"
-        embed.color = 0xE5A00D
+        embed.color = color
         # send embed message to discord
         for webhook in self.webhooks:
             webhook.send(embed=embed, file=thumbnail)
@@ -87,7 +76,7 @@ class Announcer(object):
             embed.add_field(name="Rating", value=metadata["rating"])
         # set hyperlink to show on plex
         embed.url = f"{self.plex}/details?key={key}"
-        embed.color = 0xE5A00D
+        embed.color = color
         # send embed message to discord
         for webhook in self.webhooks:
             webhook.send(embed=embed, file=thumbnail)
@@ -121,7 +110,7 @@ class Announcer(object):
             embed.add_field(name="Rating", value=metadata["rating"])
         # set hyperlink to show on plex
         embed.url = f"{self.plex}/details?key={key}"
-        embed.color = 0xE5A00D
+        embed.color = color
         # send embed message to discord
         for webhook in self.webhooks:
             webhook.send(embed=embed, file=thumbnail)
@@ -139,7 +128,23 @@ class Announcer(object):
         log.error("Tracks are not full< implemented yet")
         # set hyperlink to track on plex
         embed.url = f"{self.plex}/details?key={key}"
-        embed.color = 0xE5A00D
+        embed.color = color
         # send embed message to discord
         for webhook in self.webhooks:
             webhook.send(embed=embed, file=thumbnail)
+
+    def announce_custom(self, message):
+        """Handle a custom announcement"""
+        log.debug("Announcing custom message")
+        # read alert icon
+        with open("alert.png", "rb") as f:
+            alert = discord.File(f, "alert.png")
+            # build discord embed message
+            embed = discord.Embed()
+            embed.title = "Announcement"
+            embed.set_thumbnail(url="attachment://alert.png")
+            embed.description = message
+            embed.color = color
+            # send embed message to discord
+            for webhook in self.webhooks:
+                webhook.send(embed=embed, file=alert)

@@ -11,7 +11,15 @@ log = logging.getLogger("main")
 async def handle(request):
     """Handle inbound request for web server"""
     log.info("Inbound request")
-    # discard all requests not of type multipart/form-data
+
+    # handle custom announcement
+    if request.content_type == "text/plain":
+        message = await request.read()
+        message = message.decode("utf-8")
+        announcer.announce_custom(message)
+        return web.Response()
+
+    # discard all other requests not of type multipart/form-data
     if not request.content_type == "multipart/form-data":
         log.info("Request rejected. Invalid content type, possibly not from plex.")
         return web.Response()
