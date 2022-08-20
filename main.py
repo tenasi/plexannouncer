@@ -17,12 +17,12 @@ async def handle(request):
         message = await request.read()
         message = message.decode("utf-8")
         announcer.announce_custom(message)
-        log.info("Handling custom announcement.")
+        log.info("Handling custom announcement")
         return web.Response()
 
     # discard all other requests not of type multipart/form-data
     if not request.content_type == "multipart/form-data":
-        log.info("Request rejected. Invalid content type, possibly not from plex.")
+        log.info("Request rejected: Invalid content type, possibly not from plex")
         return web.Response()
 
     # try reading attached thumbnail
@@ -39,14 +39,14 @@ async def handle(request):
                 continue
             thumbnail = await part.read(decode=False)
     except Exception:
-        log.info("Request rejected. Error reading thumbnail.")
+        log.info("Request rejected: Error reading thumbnail")
         return web.Response(status=400)
 
     # try reading event type
     try:
         event = metadata["event"]
     except KeyError:
-        log.info("Request rejected. No event type specified, possibly not from plex.")
+        log.info("Request rejected: No event type specified, possibly not from plex")
         return web.Response()
 
     # check if event is library.new event and handle it accordingly
@@ -54,11 +54,11 @@ async def handle(request):
         try:
             handle_library_new(metadata["Metadata"], thumbnail)
         except Exception as e:
-            log.error("Error handling library.new event.")
+            log.error("Error handling library.new event")
             log.exception(e)
             return web.Response(status=400)
     else:
-        log.info(f"Request rejected. Event type of {event}.")
+        log.info(f"Request rejected. Event type of {event}")
 
     return web.Response()
 
@@ -73,16 +73,16 @@ def handle_library_new(metadata, thumbnail):
             return
     ptype = metadata["type"]
     if ptype == "movie":
-        log.info("Handling new movie announcement.")
+        log.info("Handling new movie announcement")
         announcer.announce_movie(metadata, thumbnail)
     elif ptype == "show":
-        log.info("Handling new show announcement.")
+        log.info("Handling new show announcement")
         announcer.announce_show(metadata, thumbnail)
     elif ptype == "episode":
-        log.info("Handling new show announcement.")
+        log.info("Handling new show announcement")
         announcer.announce_episode(metadata, thumbnail)
     elif ptype == "track":
-        log.info("Handling new track announcement.")
+        log.info("Handling new track announcement")
         announcer.announce_track(metadata, thumbnail)
     else:
         log.error(f"ERROR: Unknown type {ptype}")
