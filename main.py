@@ -17,6 +17,7 @@ async def handle(request):
         message = await request.read()
         message = message.decode("utf-8")
         announcer.announce_custom(message)
+        log.info("Handling custom announcement.")
         return web.Response()
 
     # discard all other requests not of type multipart/form-data
@@ -115,4 +116,4 @@ if __name__ == "__main__":
     log.info(f"Plex webhook URL: http://localhost:{port}/{PLEX_WEBHOOK_TOKEN}")
     app = web.Application()
     app.add_routes([web.post(f"/{PLEX_WEBHOOK_TOKEN}", handle)])
-    web.run_app(app, port=32500)
+    web.run_app(app, port=32500, access_log=None)
