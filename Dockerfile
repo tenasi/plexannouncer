@@ -2,10 +2,12 @@ FROM python:alpine
 
 WORKDIR /plexannouncer
 
-COPY main.py announcer.py config.py requirements.txt announce.sh .
+COPY main.py announcer.py config.py requirements.txt alert.png announce.sh .
 
-RUN pip install --no-cache-dir -r requirements.txt && \
-    mv announce.sh /usr/bin/announce
+RUN apk update && apk upgrade && apk add curl && \
+    pip install --no-cache-dir -r requirements.txt && \
+    mv announce.sh /usr/bin/announce && \
+    chmod u+x /usr/bin/announce
 
 EXPOSE 32500/tcp
 
