@@ -1,4 +1,4 @@
-FROM python:alpine
+FROM python:alpine3.11
 
 WORKDIR /plexannouncer
 
