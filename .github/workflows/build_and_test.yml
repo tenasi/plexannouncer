@@ -13,10 +13,10 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - 3.8
-          - 3.9
-          - 3.10
-          - 3.11
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
     env:
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
     steps:
@@ -49,10 +49,10 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - 3.8
-          - 3.9
-          - 3.10
-          - 3.11
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
     env:
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
       PLEX_SERVER_URL: https://app.plex.tv/desktop/#!/server/1234123412341234123412341234123412341234/
